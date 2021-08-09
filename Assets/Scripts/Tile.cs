@@ -12,6 +12,7 @@ public class Tile : MonoBehaviour
 
     public float animationTimeTotal = 1.0f;
     public float animationTimeCurrent = 0;
+    public float animationThreshold = 0.9f;
     
 
     private Vector3 boardPosition;
@@ -29,16 +30,14 @@ public class Tile : MonoBehaviour
         {
             animationTimeCurrent += Time.deltaTime;
 
-            if(animationTimeCurrent > 0 && animationTimeCurrent < 1)
+            if(animationTimeCurrent > 0 && animationTimeCurrent < animationThreshold)
             {
                 animationTimeCurrent += Time.deltaTime;
                 transform.position = Vector3.Lerp(transform.position, boardPosition, SmootherStep(animationTimeCurrent / animationTimeTotal));
             }
             else
             {
-                transform.position = boardPosition;
-                IsAnimating = false;
-                animationTimeCurrent = 0;
+                LockBoardPosition();
             }
         }
 
@@ -49,6 +48,13 @@ public class Tile : MonoBehaviour
     public void SetBoardPosition(Vector3 p)
     {
         boardPosition = p;
+    }
+
+    public void LockBoardPosition()
+    {
+        transform.position = boardPosition;
+        IsAnimating = false;
+        animationTimeCurrent = 0;
     }
 
     // used to create a smooth in smooth out lerp

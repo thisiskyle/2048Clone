@@ -221,8 +221,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 3
-  m_fontSizeBase: 3
+  m_fontSize: 4
+  m_fontSizeBase: 4
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 1
@@ -312,5 +312,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   colors: {fileID: 11400000, guid: e4171bdf8566b984383f0e15944c5f6a, type: 2}
-  animationTimeTotal: 0.1
+  animationTimeTotal: 0.5
   animationTimeCurrent: 0
+  animationThreshold: 0.2
