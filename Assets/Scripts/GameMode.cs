@@ -4,15 +4,18 @@ using UnityEngine;
 
 public class GameMode : MonoBehaviour
 {
+
+    // prefabs
     public GameObject tilePrefab = null;
     public GameObject backgroundPrefab = null;
+    public GameObject boardGo;
 
-    private List<List<Tile>> board;
+    public GameObject cam = null;
 
     private int boardWidth = 4;
     private int boardHeight = 4;
-
-
+    private List<List<Tile>> board;
+    private KeyCode? inputBuffer = null;
 
 
     
@@ -20,34 +23,13 @@ public class GameMode : MonoBehaviour
     void Start()
     {
         InitialSetup();
+        cam.transform.position = new Vector3((boardWidth / 2) - 0.5f, (boardHeight / 2) - 0.5f, cam.transform.position.z);
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.D))
-        {
-            MoveTilesRight();
-            SpawnNewTile();
-        }
-
-        else if(Input.GetKeyDown(KeyCode.A))
-        {
-            MoveTilesLeft();
-            SpawnNewTile();
-        }
-        else if(Input.GetKeyDown(KeyCode.W))
-        {
-            MoveTilesUp();
-            SpawnNewTile();
-        }
-        else if(Input.GetKeyDown(KeyCode.S))
-        {
-            MoveTilesDown();
-            SpawnNewTile();
-        }
-
-
+        InputHandler();
         UpdateBoard();
         UpdateGraphics();
     }
@@ -58,11 +40,9 @@ public class GameMode : MonoBehaviour
 
         SpawnNewTile();
         SpawnNewTile();
-        SpawnNewTile();
 
         UpdateBoard();
         UpdateGraphics();
-        
     }
 
     private void UpdateBoard()
@@ -94,11 +74,89 @@ public class GameMode : MonoBehaviour
         }
     }
 
+    private bool IsAnimating()
+    {
+        for(int y = 0; y < boardHeight; ++y)
+        {
+            for(int x = 0; x < boardWidth; ++x)
+            {
+                if(board[y][x] != null && board[y][x].IsAnimating)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // handles the keypress and desides wether to call them or store them in the buffer
+    private void InputHandler()
+    {
+        if(!IsAnimating())
+        {
+            if(inputBuffer != null)
+            {
+                InputBroker(inputBuffer);
+                inputBuffer = null;
+            }
+            else
+            {
+                if(Input.GetKeyDown(KeyCode.W)) InputBroker(KeyCode.W);
+                else if(Input.GetKeyDown(KeyCode.A)) InputBroker(KeyCode.A);
+                else if(Input.GetKeyDown(KeyCode.S)) InputBroker(KeyCode.S);
+                else if(Input.GetKeyDown(KeyCode.D)) InputBroker(KeyCode.D);
+                else if(Input.GetKeyDown(KeyCode.R)) InputBroker(KeyCode.R);
+            }
+        }
+        else
+        {
+            if(Input.GetKeyDown(KeyCode.D)) inputBuffer = KeyCode.D;
+            else if(Input.GetKeyDown(KeyCode.A)) inputBuffer = KeyCode.A;
+            else if(Input.GetKeyDown(KeyCode.W)) inputBuffer = KeyCode.W;
+            else if(Input.GetKeyDown(KeyCode.S)) inputBuffer = KeyCode.S;
+        }
+    }
+
+
+    // calls the function based on the key sent
+    private void InputBroker(KeyCode? key)
+    {
+        if(key == null) return;
+
+        switch(key)
+        {
+            case KeyCode.W:
+                MoveTilesUp();
+                SpawnNewTile();
+                break;
+
+            case KeyCode.A:
+                MoveTilesLeft();
+                SpawnNewTile();
+                break;
+
+            case KeyCode.S:
+                MoveTilesDown();
+                SpawnNewTile();
+                break;
+
+            case KeyCode.D:
+                MoveTilesRight();
+                SpawnNewTile();
+                break;
+
+            case KeyCode.R:
+                Reset();
+                break;
+        }
+    }
+
 
 
     private void CreateBoard()
     {
         board = new List<List<Tile>>();
+        boardGo = new GameObject("Board");
 
 
         for(int y = 0; y < boardHeight; ++y)
@@ -108,7 +166,7 @@ public class GameMode : MonoBehaviour
             for(int x = 0; x < boardWidth; ++x)
             {
                 board[y].Add(null);
-                Instantiate(backgroundPrefab, new Vector3(x, y, 2), Quaternion.identity);
+                Instantiate(backgroundPrefab, new Vector3(x, y, 2), Quaternion.identity).gameObject.transform.SetParent(boardGo.transform);
             }
         }
     }
@@ -116,9 +174,18 @@ public class GameMode : MonoBehaviour
 
     private void SpawnTile(int x, int y, int v)
     {
-        Tile tile = new Tile(Instantiate(tilePrefab, new Vector3(x, y, 0), Quaternion.identity));
+        Tile tile = Instantiate(tilePrefab, new Vector3(x, y, 0), Quaternion.identity).GetComponent<Tile>();
         board[y][x] = tile;
         tile.Value = v;
+        tile.gameObject.transform.SetParent(boardGo.transform);
+    }
+
+    private void Reset()
+    {
+        board.Clear();
+        Destroy(boardGo);
+        boardGo = null;
+        InitialSetup();
     }
 
 
@@ -168,7 +235,7 @@ public class GameMode : MonoBehaviour
                 if(row[i].Value == row[i - 1].Value)
                 {
                     row[i].Value *= 2;
-                    Destroy(row[i - 1].graphic);
+                    Destroy(row[i - 1].gameObject);
                     row.RemoveAt(i - 1);
                     // we decrement here because we dont want things to combine more than once
                     // this will skip checking the same tile twice
@@ -213,7 +280,7 @@ public class GameMode : MonoBehaviour
                 if(row[i].Value == row[i + 1].Value)
                 {
                     row[i].Value *= 2;
-                    Destroy(row[i + 1].graphic);
+                    Destroy(row[i + 1].gameObject);
                     row.RemoveAt(i + 1);
                 }
             }
@@ -254,7 +321,7 @@ public class GameMode : MonoBehaviour
                 if(column[i].Value == column[i - 1].Value)
                 {
                     column[i].Value *= 2;
-                    Destroy(column[i - 1].graphic);
+                    Destroy(column[i - 1].gameObject);
                     column.RemoveAt(i - 1);
                     // we decrement here because we dont want things to combine more than once
                     // this will skip checking the same tile twice
@@ -301,7 +368,7 @@ public class GameMode : MonoBehaviour
                 if(column[i].Value == column[i + 1].Value)
                 {
                     column[i].Value *= 2;
-                    Destroy(column[i + 1].graphic);
+                    Destroy(column[i + 1].gameObject);
                     column.RemoveAt(i + 1);
                 }
             }
