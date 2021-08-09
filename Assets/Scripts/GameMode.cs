@@ -92,6 +92,8 @@ public class GameMode : MonoBehaviour
     // handles the keypress and desides wether to call them or store them in the buffer
     private void InputHandler()
     {
+        if(Input.GetKeyDown(KeyCode.Escape)) InputBroker(KeyCode.Escape);
+
         if(!IsAnimating())
         {
             if(inputBuffer != null)
@@ -147,6 +149,10 @@ public class GameMode : MonoBehaviour
 
             case KeyCode.R:
                 Reset();
+                break;
+
+            case KeyCode.Escape:
+                Application.Quit();
                 break;
         }
     }
