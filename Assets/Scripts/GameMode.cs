@@ -219,180 +219,132 @@ public class GameMode : MonoBehaviour
 
     public void MoveTilesRight()
     {
-
-        // for each row....
         for(int y = 0; y < boardHeight; y++)
         {
-            // holds the current tiles in the row
-            List<Tile> row = new List<Tile>();
-
-            // for each column...
-            for(int x = 0; x < boardWidth; x++)
-            {
-                // collect the actual tiles
-                Tile t = board[y][x];
-                if(t != null) { row.Add(t); }
-            }
-
-
-            // loop backwards combining where needed
-            for(int i = row.Count - 1; i > 0; i--)
-            {
-                if(row[i].Value == row[i - 1].Value)
-                {
-                    row[i].Value *= 2;
-                    Destroy(row[i - 1].gameObject);
-                    row.RemoveAt(i - 1);
-                    // we decrement here because we dont want things to combine more than once
-                    // this will skip checking the same tile twice
-                    i--;
-                }
-            }
-
-            // create a new row
-            board[y] = new List<Tile>();
-
-            // populate new row with nulls
-            for(int k = 0; k < boardWidth - row.Count; k++)
-            {
-                board[y].Add(null);
-            }
-
-            // add the tiles to the end of the row
-            row.ForEach(item => board[y].Add(item));
+            List<Tile> row = CollectRow(y);
+            row = CombineBackward(row);
+            board[y] = InsertNulls(boardWidth - row.Count, row);
         }
     }
 
     public void MoveTilesLeft()
     {
-
-        // for each row....
         for(int y = 0; y < boardHeight; y++)
         {
-            // holds the current tiles in the row
-            List<Tile> row = new List<Tile>();
-
-            // for each column...
-            for(int x = 0; x < boardWidth; x++)
-            {
-                // collect the actual tiles
-                Tile t = board[y][x];
-                if(t != null) { row.Add(t); }
-            }
-
-            // loop forwards combining where needed
-            for(int i = 0; i < row.Count - 1; i++)
-            {
-                if(row[i].Value == row[i + 1].Value)
-                {
-                    row[i].Value *= 2;
-                    Destroy(row[i + 1].gameObject);
-                    row.RemoveAt(i + 1);
-                }
-            }
-
-            // create a new row
-            board[y] = new List<Tile>();
-            // add the tiles to the front of the row
-            row.ForEach(item => board[y].Add(item));
-            // add nulls to the end of the new row 
-            for(int k = 0; k < boardWidth - row.Count; k++)
-            {
-                board[y].Add(null);
-            }
+            List<Tile> row = CollectRow(y);
+            row = CombineForward(row);
+            board[y] = AppendNulls(boardWidth - row.Count, row);
         }
     }
 
     public void MoveTilesUp()
     {
-
-        // for each column....
         for(int x = 0; x < boardWidth; x++)
         {
-            // holds the current tiles in the column
-            List<Tile> column = new List<Tile>();
-
-            // for each column...
-            for(int y = 0; y < boardHeight; y++)
-            {
-                // collect the actual tiles
-                Tile t = board[y][x];
-                if(t != null) { column.Add(t); }
-            }
-
-
-            // loop backwards combining where needed
-            for(int i = column.Count - 1; i > 0; i--)
-            {
-                if(column[i].Value == column[i - 1].Value)
-                {
-                    column[i].Value *= 2;
-                    Destroy(column[i - 1].gameObject);
-                    column.RemoveAt(i - 1);
-                    // we decrement here because we dont want things to combine more than once
-                    // this will skip checking the same tile twice
-                    i--;
-                }
-            }
-
-            int nullCount = boardHeight - column.Count;
+            List<Tile> col = CollectColumn(x);
+            col = CombineBackward(col);
+            col = InsertNulls(boardHeight - col.Count, col);
 
             for(int y = 0; y < boardHeight; y++)
             {
-                if(y < nullCount)
-                {
-                    board[y][x] = null;
-                }
-                else
-                {
-                    board[y][x] = column[y - nullCount];
-                }
+                board[y][x] = col[y];
             }
         }
     }
 
     public void MoveTilesDown()
     {
-
-        // for each column....
         for(int x = 0; x < boardWidth; x++)
         {
-            // holds the current tiles in the column
-            List<Tile> column = new List<Tile>();
-
-            // for each column...
-            for(int y = 0; y < boardHeight; y++)
-            {
-                // collect the actual tiles
-                Tile t = board[y][x];
-                if(t != null) { column.Add(t); }
-            }
-
-            // loop forwards combining where needed
-            for(int i = 0; i < column.Count - 1; i++)
-            {
-                if(column[i].Value == column[i + 1].Value)
-                {
-                    column[i].Value *= 2;
-                    Destroy(column[i + 1].gameObject);
-                    column.RemoveAt(i + 1);
-                }
-            }
-
-            int nullCount = boardHeight - column.Count;
+            List<Tile> col = CollectColumn(x);
+            col = CombineForward(col);
+            col = AppendNulls(boardHeight - col.Count, col);
 
             for(int y = 0; y < boardHeight; y++)
             {
-                if(y > column.Count - 1)
-                {
-                    board[y][x] = null;
-                }
-                else
-                {
-                    board[y][x] = column[y];
-                }
+                board[y][x] = col[y];
             }
         }
     }
 
+    public List<Tile> InsertNulls(int count, List<Tile> tiles)
+    {
+        for(int i = 0; i < count; i++)
+        {
+            tiles.Insert(0, null);
+        }
+        return tiles;
+    }
+
+    public List<Tile> AppendNulls(int count, List<Tile> tiles)
+    {
+        for(int i = 0; i < count; i++)
+        {
+            tiles.Add(null);
+        }
+        return tiles;
+    }
+
+    public List<Tile> CollectRow(int r)
+    {
+        List<Tile> row = new List<Tile>();
+
+        for(int x = 0; x < boardWidth; x++)
+        {
+            // rowlect the actual tiles
+            Tile t = board[r][x];
+            if(t != null) { row.Add(t); }
+        }
+        return row;
+    }
+
+
+    // collect the actual tiles
+    public List<Tile> CollectColumn(int c)
+    {
+        List<Tile> col = new List<Tile>();
+
+        for(int y = 0; y < boardHeight; y++)
+        {
+            Tile t = board[y][c];
+            if(t != null) { col.Add(t); }
+        }
+
+        return col;
+    }
+
+
+    // loop forwards combining where needed
+    public List<Tile> CombineForward(List<Tile> tiles)
+    {
+        for(int i = 0; i < tiles.Count - 1; i++)
+        {
+            if(tiles[i].Value == tiles[i + 1].Value)
+            {
+                tiles[i].Value *= 2;
+                Destroy(tiles[i + 1].gameObject);
+                tiles.RemoveAt(i + 1);
+            }
+        }
+
+        return tiles;
+    }
+
+    // loop backwards combining where needed
+    public List<Tile> CombineBackward(List<Tile> tiles)
+    {
+        for(int i = tiles.Count - 1; i > 0; i--)
+        {
+            if(tiles[i].Value == tiles[i - 1].Value)
+            {
+                tiles[i].Value *= 2;
+                Destroy(tiles[i - 1].gameObject);
+                tiles.RemoveAt(i - 1);
+                // we decrement here because we dont want things to combine more than once
+                // this will skip checking the same tile twice
+                i--;
+            }
+        }
+        return tiles;
+    }
 }
